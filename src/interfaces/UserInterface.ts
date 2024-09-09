@@ -1,7 +1,8 @@
+import { Document } from 'mongoose';
+
 export interface IUser extends Document {
-    phone_number: string;
-    username: string;
-    role: string;
-    requestedRole?: string;
-    comparePassword(candidatePassword: string): Promise<boolean>;
-  }
+  phone_number: string;
+  telegramUsername: string;
+  role: string;
+  requestedRole?: string;
+}

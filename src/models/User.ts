@@ -1,24 +1,11 @@
-import { Model, Schema, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import { Roles } from './Roles';
-import bcrypt from 'bcrypt';
-import { IUser } from '../interfaces/UserInterface';
 
 const userSchema = new Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  phone_number: { type: String, required: true, unique: true },
+  telegramUsername: { type: String, required: true },
   role: { type: String, enum: Roles, default: Roles.USER },
-  requestedRole: { type: String, default: '' },
+  requestedRole: { type: String, enum: Roles },
 });
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
-
-userSchema.methods.comparePassword = function (candidatePassword: string): Promise<boolean> {
-  const bcrypt = require('bcrypt');
-  return bcrypt.compare(candidatePassword, this.password);
-};
-
-export const User: Model<IUser> = model<IUser>('User', userSchema);
+export const User = model('User', userSchema);

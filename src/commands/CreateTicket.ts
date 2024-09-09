@@ -1,31 +1,18 @@
-import { MyContext } from '../types';
+import { Context, Telegraf } from 'telegraf';
 import { Ticket } from '../models/Ticket';
-import { Message } from 'telegraf/typings/core/types/typegram';
 
-export const createTicket = async (ctx: MyContext) => {
-  const message = ctx.message as Message.TextMessage;
+export const createTicketCommand = (bot: Telegraf<Context>) => {
+  bot.command('create_ticket', async (ctx) => {
+    const [_, title, ...descriptionParts] = ctx.message.text.split(' ');
+    const description = descriptionParts.join(' ');
 
-  const commandText = message.text.trim();
-  const args = commandText.split(/ (?=(?:(?:[^"]*"){2})*[^"]*$)/).slice(1); 
+    const newTicket = new Ticket({
+      username: ctx.from.username || 'Anonymous',
+      title,
+      description,
+    });
 
-  if (args.length < 2) {
-    return ctx.reply('Usage: /createTicket <title> <description>');
-  }
-
-  const [title, description] = args;
-  
-  if (!ctx.session?.user) {
-    return ctx.reply('You need to be logged in to create a ticket.');
-  }
-
-  const ticket = new Ticket({
-    username: ctx.session.user.username,
-    title,
-    description,
-    status: false,
+    await newTicket.save();
+    ctx.reply('Your ticket has been created.');
   });
-
-  await ticket.save();
-
-  ctx.reply(`Ticket "${title}" created successfully`);
 };

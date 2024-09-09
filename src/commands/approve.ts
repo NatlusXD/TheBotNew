@@ -1,36 +1,24 @@
-import { MyContext } from '../types';
+import { Context, Telegraf } from 'telegraf';
 import { User } from '../models/User';
-import { Message } from 'telegraf/typings/core/types/typegram';
+import { Roles } from '../models/Roles';
 
-export const approve = async (ctx: MyContext) => {
-  if (!ctx.session) {
-    return ctx.reply('Session not initialized. Please try again.');
-  }
-
-  if (!ctx.session.user || ctx.session.user.role !== 'SUPREME_ADMIN') {
-    return ctx.reply('Only SUPREME_ADMIN can approve role changes.');
-  }
-
-  const message = ctx.message as Message.TextMessage | undefined;
-
-  if (message?.text) {
-    const [command, username] = message.text.split(' ') || [];
-
-    if (!username) {
-      return ctx.reply('Usage: /approve <username>');
+export const approveCommand = (bot: Telegraf<Context>) => {
+  bot.command('approve', async (ctx) => {
+    if (ctx.from.id.toString() !== '66dec21eba4040fe545bbf03') {
+      ctx.reply('You are not authorized to use this command.');
+      return;
     }
 
-    const user = await User.findOne({ username });
-    if (!user || !user.requestedRole) {
-      return ctx.reply('No role change request found for this user.');
+    const [_, username] = ctx.message.text.split(' ');
+    const user = await User.findOne({ telegramUsername: username });
+
+    if (user && user.requestedRole === Roles.ADMIN) {
+      user.role = Roles.ADMIN;
+      user.requestedRole = undefined;
+      await user.save();
+      ctx.reply(`${username} has been promoted to ADMIN.`);
+    } else {
+      ctx.reply('User not found or not requested for ADMIN role.');
     }
-
-    user.role = user.requestedRole;
-    user.requestedRole = '';
-    await user.save();
-
-    ctx.reply(`User ${username} promoted to ${user.role} successfully.`);
-  } else {
-    return ctx.reply('Please send a text message with the approve command.');
-  }
+  });
 };

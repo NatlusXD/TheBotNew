@@ -1,23 +1,42 @@
-import { MyContext } from '../types';
+// src/commands/register.ts
+import { Context, Telegraf } from 'telegraf';
 import { User } from '../models/User';
 import { Roles } from '../models/Roles';
-import { Message } from 'telegraf/typings/core/types/typegram';
 
-export const register = async (ctx: MyContext) => {
-  const message = ctx.message as Message.TextMessage;
+export const registerCommand = (bot: Telegraf<Context>) => {
+  bot.command('register', async (ctx) => {
+    const userId = ctx.from.id.toString();
+    const username = ctx.from.username || 'Anonymous';
+    let user = await User.findOne({ phone_number: userId });
 
-  if (!message?.text) {
-    return ctx.reply('Usage: /register <username> <password>');
-  }
+    if (user) {
+      ctx.reply('You are already registered.');
+      return;
+    }
 
-  const [username, password] = message.text.split(' ').slice(1);
+    ctx.reply('Please share your phone number for registration.', {
+      reply_markup: {
+        one_time_keyboard: true,
+        keyboard: [[{ text: 'Share Phone Number', request_contact: true }]],
+      },
+    });
+  });
 
-  if (!username || !password) {
-    return ctx.reply('Usage: /register <username> <password>');
-  }
+  bot.on('contact', async (ctx) => {
+    const { phone_number } = ctx.message.contact;
+    const username = ctx.from.username || 'Anonymous';
+    let user = await User.findOne({ phone_number });
 
-  const user = new User({ username, password, role: Roles.USER });
-  await user.save();
-
-  ctx.reply("User ${username} registered successfully with role ${Roles.USER}");
+    if (!user) {
+      user = new User({
+        phone_number,
+        telegramUsername: username,
+        role: Roles.USER,
+      });
+      await user.save();
+      ctx.reply('Registration successful!');
+    } else {
+      ctx.reply('Logged in successfully!');
+    }
+  });
 };
