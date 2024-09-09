@@ -1,8 +1,9 @@
 import { Context, Telegraf } from 'telegraf';
 import { User } from '../models/User';
 import { Roles } from '../models/Roles';
+import { CustomContext } from '../types';
 
-export const approveCommand = (bot: Telegraf<Context>) => {
+export const approveCommand = (bot: Telegraf<CustomContext>) => {
   bot.command('approve', async (ctx) => {
     if (ctx.from.id.toString() !== '66dec21eba4040fe545bbf03') {
       ctx.reply('You are not authorized to use this command.');

@@ -2,8 +2,9 @@
 import { Context, Telegraf } from 'telegraf';
 import { User } from '../models/User';
 import { Roles } from '../models/Roles';
+import { CustomContext } from '../types';
 
-export const registerCommand = (bot: Telegraf<Context>) => {
+export const registerCommand = (bot: Telegraf<CustomContext>) => {
   bot.command('register', async (ctx) => {
     const userId = ctx.from.id.toString();
     const username = ctx.from.username || 'Anonymous';
