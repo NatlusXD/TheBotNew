@@ -1,21 +1,16 @@
-// src/commands/register.ts
-import { Context, Telegraf } from 'telegraf';
+import { Telegraf } from 'telegraf';
 import { User } from '../models/User';
 import { Roles } from '../models/Roles';
 import { CustomContext } from '../types';
 
 export const registerCommand = (bot: Telegraf<CustomContext>) => {
-  bot.command('register', async (ctx) => {
-    const userId = ctx.from.id.toString();
-    const username = ctx.from.username || 'Anonymous';
-    let user = await User.findOne({ phone_number: userId });
+  console.log("Register command initialized");
 
-    if (user) {
-      ctx.reply('You are already registered.');
-      return;
-    }
-
-    ctx.reply('Please share your phone number for registration.', {
+  bot.action('register', async (ctx) => {
+    console.log('Received /register command');
+    const username = ctx.from?.username || 'Anonymous';
+    
+    await ctx.reply('Please share your phone number for registration.', {
       reply_markup: {
         one_time_keyboard: true,
         keyboard: [[{ text: 'Share Phone Number', request_contact: true }]],
@@ -24,20 +19,40 @@ export const registerCommand = (bot: Telegraf<CustomContext>) => {
   });
 
   bot.on('contact', async (ctx) => {
-    const { phone_number } = ctx.message.contact;
-    const username = ctx.from.username || 'Anonymous';
-    let user = await User.findOne({ phone_number });
+    console.log('Received contact message:', ctx.message);
 
-    if (!user) {
-      user = new User({
-        phone_number,
-        telegramUsername: username,
-        role: Roles.USER,
-      });
-      await user.save();
-      ctx.reply('Registration successful!');
-    } else {
-      ctx.reply('Logged in successfully!');
+    try {
+      const contact = ctx.message?.contact;
+      if (!contact) {
+        console.error('No contact data received');
+        return;
+      }
+
+      const { phone_number } = contact;
+      const username = ctx.from?.username || 'Anonymous';
+      
+      if (!phone_number) {
+        console.error('Contact does not have a phone number');
+        await ctx.reply('Failed to register. Please try again.');
+        return;
+      }
+
+      let user = await User.findOne({ phone_number });
+
+      if (!user) {
+        user = new User({
+          phone_number,
+          telegramUsername: username,
+          role: Roles.USER,
+        });
+        await user.save();
+        await ctx.reply('Registration successful!');
+      } else {
+        await ctx.reply('Logged in successfully!');
+      }
+    } catch (err) {
+      console.error('Error handling contact:', err);
+      await ctx.reply('An error occurred during registration. Please try again.');
     }
   });
 };

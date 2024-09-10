@@ -1,13 +1,14 @@
-// src/index.ts
 import { session, Telegraf } from 'telegraf';
 import dotenv from 'dotenv';
 import { connectToMongoDB } from './db';
 import { registerCommand } from './commands/register';
 import { approveCommand } from './commands/approve';
-import { createTicketCommand } from './commands/CreateTicket';
-import { checkTicketsCommand } from './commands/checkTickets';
-import { setupBot } from './commands/viewTicketCommand';
+import { checkTicketsAction } from './commands/checkTickets';
 import { CustomContext } from './types';
+import { textMessageHandler } from './commands/textMessageHandler';
+import { startCommand } from './commands/start';
+import { viewTicketCommand } from './commands/viewTicketCommand';
+import { createTicketCommand } from './commands/CreateTicket';
 
 dotenv.config();
 
@@ -19,17 +20,20 @@ if (!botToken || !mongoUri) {
 }
 
 const bot = new Telegraf<CustomContext>(botToken);
-bot.use(session()); // Ensure session middleware is used
+bot.use(session());
 
 const startBot = async () => {
   try {
     await connectToMongoDB();
+
+
+    startCommand(bot);
+    createTicketCommand(bot);
+    viewTicketCommand(bot);
+    checkTicketsAction(bot);
     registerCommand(bot);
     approveCommand(bot);
-    createTicketCommand(bot);
-    //checkTicketsCommand(bot);
-    setupBot(bot);
-
+    
     await bot.launch();
     console.log('Bot is running...');
   } catch (err) {
